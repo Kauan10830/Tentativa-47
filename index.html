@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bolinho de Chocolate</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: pink;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+
+        #message-container {
+            margin-top: 50px;
+        }
+
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+
+        #no-btn {
+            position: absolute;
+        }
+
+        #game-container {
+            margin-top: 20px;
+        }
+
+        #congratulations {
+            margin-top: 20px;
+        }
+
+        canvas {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+    <div id="message-container">
+        <p>aceita um bolinho de chocolate semana que vem?</p>
+        <button id="yes-btn">Sim</button>
+        <button id="no-btn">Não</button>
+    </div>
+    <div id="game-container" style="display: none;">
+        <p>Você tem que fazer 20 para receber o prêmio!</p>
+        <canvas id="game-canvas" width="800" height="400"></canvas>
+        <p id="score">Pontuação: 0</p>
+    </div>
+    <div id="congratulations" style="display: none;">
+        <p>Parabéns ❤️❤️ você ganhou o bolinho de chocolate</p>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const yesButton = document.getElementById('yes-btn');
+            const noButton = document.getElementById('no-btn');
+            const messageContainer = document.getElementById('message-container');
+            const gameContainer = document.getElementById('game-container');
+            const congratulations = document.getElementById('congratulations');
+
+            yesButton.addEventListener('click', () => {
+                messageContainer.style.display = 'none';
+                gameContainer.style.display = 'block';
+                startGame();
+            });
+
+            noButton.addEventListener('click', () => {
+                noButton.style.position = 'absolute';
+                noButton.style.top = `${Math.random() * 80 + 10}%`;
+                noButton.style.left = `${Math.random() * 80 + 10}%`;
+            });
+
+            function startGame() {
+                const canvas = document.getElementById('game-canvas');
+                const ctx = canvas.getContext('2d');
+                const scoreElement = document.getElementById('score');
+                let score = 0;
+                let gameInterval;
+                const obstacles = [];
+                const player = {
+                    x: 50,
+                    y: canvas.height - 50, // Ajusta a posição y para alinhar com os obstáculos
+                    width: 30,
+                    height: 30,
+                    jump: 0,
+                    jumping: false
+                };
+
+                function drawPlayer() {
+                    ctx.fillStyle = 'blue';
+                    ctx.fillRect(player.x, player.y - player.jump, player.width, player.height);
+                }
+
+                function drawObstacles() {
+                    ctx.fillStyle = 'red';
+                    obstacles.forEach(obs => {
+                        ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+                    });
+                }
+
+                function updateGameArea() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    drawPlayer();
+                    drawObstacles();
+
+                    // Update player jump
+                    if (player.jumping) {
+                        player.jump += 2;  // Increase the jump height
+                        if (player.jump >= 20) {  // Maximum jump height
+                            player.jumping = false;
+                        }
+                    } else if (player.jump > 0) {
+                        player.jump -= 2;  // Decrease the jump height
+                        if (player.jump <= 0) {  // Ensure player returns to the ground
+                            player.jump = 0;
+                        }
+                    }
+
+                    obstacles.forEach(obs => {
+                        obs.x -= 5;
+                        if (obs.x < 0) {
+                            obstacles.splice(obstacles.indexOf(obs), 1);
+                            score++;
+                            scoreElement.textContent = `Pontuação: ${score}`;
+                        }
+
+                        // Check collision
+                        if (player.x < obs.x + obs.width &&
+                            player.x + player.width > obs.x &&
+                            player.y - player.jump < obs.y + obs.height &&
+                            player.y - player.jump + player.height > obs.y) {
+                            endGame();
+                        }
+                    });
+
+                    if (score >= 20) {
+                        endGame(true);
+                    }
+                }
+
+                function endGame(win = false) {
+                    clearInterval(gameInterval);
+                    gameContainer.style.display = 'none';
+                    congratulations.style.display = 'block';
+                    if (win) {
+                        congratulations.innerHTML = 'Parabéns ❣️❣️❤️Shay❤️❣️❣️ você ganhou o bolinho de chocolate';
+                    } else {
+                        setTimeout(() => {
+                            gameContainer.style.display = 'block';
+                            congratulations.style.display = 'none';
+                            startGame(); // Restart the game
+                        }, 2000);
+                    }
+                }
+
+                function jump() {
+                    if (!player.jumping && player.jump === 0) {
+                        player.jumping = true;
+                    }
+                }
+
+                function generateObstacle() {
+                    const width = 30;
+                    const height = 30;
+                    const x = canvas.width;
+                    const y = canvas.height - height; // Obstáculos na mesma altura do personagem
+                    obstacles.push({ x, y, width, height });
+                }
+
+                gameInterval = setInterval(() => {
+                    updateGameArea();
+                }, 20);
+
+                setInterval(generateObstacle, 2000);
+                document.addEventListener('click', () => {
+                    jump();
+                });
+            }
+        });
+    </script>
+</body>
+</html>
